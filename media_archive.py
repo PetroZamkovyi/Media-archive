@@ -7,50 +7,42 @@ from moviepy.editor import VideoFileClip
 
 
 # Define function to get media files and their metadata
-def get_media_files_metadata(root_dir, shadow_root):
-    media_files = []
-    for root, _, files in os.walk(root_dir):
-        # Skip the shadow folder itself
-        if root.startswith(shadow_root):
-            continue
+def get_media_files_metadata(root_dir):
+    metadata = []
+    for root, dirs, files in os.walk(root_dir):
 
         for file in files:
             file_path = os.path.join(root, file)
-            mime_type, _ = mimetypes.guess_type(file_path)
+            mime_type, dirs = mimetypes.guess_type(file_path)
 
             if mime_type and (mime_type.startswith('image') or mime_type.startswith('video')):
                 file_info = {
                     'original_path': file_path,
                     'filename': file,
                     'filetype': mime_type,
+                    'modified': os.path.getmtime(file_path),
+                    'created': os.path.getctime(file_path),
                     'size': os.path.getsize(file_path)
                 }
-                media_files.append(file_info)
+                metadata.append(file_info)
 
-    return media_files
-
-
-# Define function to create a shadow folder with the same subfolder structure
-def create_shadow_folder(root_dir, shadow_root):
-    for root, dirs, _ in os.walk(root_dir):
-        # Skip the shadow folder itself
-        if root.startswith(shadow_root):
-            continue
-
-        for dir_name in dirs:
-            src_dir_path = os.path.join(root, dir_name)
-            shadow_dir_path = src_dir_path.replace(root_dir, shadow_root, 1)
-            os.makedirs(shadow_dir_path, exist_ok=True)
+    return metadata
 
 
-# Define function to process and create thumbnails for media files
-def create_thumbnails(media_files, shadow_root):
+# Define combined function to create shadow folder structure and process media files
+def process_and_create_thumbnails(root_dir, shadow_root, media_files):
     for file_info in media_files:
         original_path = file_info['original_path']
         mime_type = file_info['filetype']
+
+        # Compute the shadow path for the file and create directories if necessary
         shadow_path = original_path.replace(root_dir, shadow_root, 1)
+        shadow_dir = os.path.dirname(shadow_path)
+        os.makedirs(shadow_dir, exist_ok=True)
+
+        # Generate the thumbnail filename
         filename, ext = os.path.splitext(file_info['filename'])
-        thumbnail_path = os.path.join(os.path.dirname(shadow_path), filename + '-thumbnail' + ext)
+        thumbnail_path = os.path.join(shadow_dir, filename + '-thumbnail' + ext)
 
         try:
             if mime_type.startswith('image'):
@@ -80,17 +72,14 @@ if __name__ == "__main__":
     os.makedirs(shadow_root, exist_ok=True)
 
     # Step 1: Gather metadata
-    media_files = get_media_files_metadata(root_dir, shadow_root)
+    media_files = get_media_files_metadata(root_dir)
     metadata_file_path = os.path.join(shadow_root, 'metadata.json')
 
-    # Save metadata to JSON
+    # Step 2: Save metadata to JSON
     with open(metadata_file_path, 'w') as metadata_file:
         json.dump(media_files, metadata_file, indent=4)
 
-    # Step 2: Create shadow folder structure
-    create_shadow_folder(root_dir, shadow_root)
-
-    # Step 3: Process media files and create thumbnails
-    create_thumbnails(media_files, shadow_root)
+    # Step 3: Create shadow folder structure and process files
+    process_and_create_thumbnails(root_dir, shadow_root, media_files)
 
     print(f"Processing completed. Check the '{shadow_root}' folder for results.")

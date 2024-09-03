@@ -13,9 +13,10 @@ Implementation:
     Python script (CLI in the future?)
 
 User interaction, data processing flow:
-    Start a script inside a folder with media files (and sub-folders)
-    The script creates a Shadow Folder called 'Media-archive' with the same subfolder structure    
-    Script analyses the data (read-only) and prepares a JSON file with all the files and their metadata inside the folder
-    The script processes every media file in the original folder (read-only) and creates a Thumbnail copy in the Shadow Folder
-    The subfolders and processed files should end as original_name + '-thumbnail' + extension.
-    At the finish user receives the 'Media-archive' folder with the same folder structure but filled with the reduced-size media.
+
+* Start a script inside a folder with media files (and sub-folders)
+* The script creates a Shadow Folder called 'Media-archive' with the same subfolder structure    
+* Script analyses the data (read-only) and prepares a JSON file with all the files and their metadata inside the folder
+* The script processes every media file in the original folder (read-only) and creates a Thumbnail copy in the Shadow Folder
+* The subfolders and processed files should end as original_name + '-thumbnail' + extension.
+* At the finish user receives the 'Media-archive' folder with the same folder structure but filled with the reduced-size media.
