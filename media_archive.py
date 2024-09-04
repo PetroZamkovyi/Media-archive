@@ -46,9 +46,13 @@ def process_and_create_thumbnails(root_dir, shadow_root, media_files):
 
         try:
             if mime_type.startswith('image'):
-                # Process image
+                '''
+                Process image. Image made on my phone Xiaomi Mi Note 10 usually have 6016x4512 px
+                Phone width is only 1440x1080
+                '''
                 with Image.open(original_path) as img:
-                    img.thumbnail((320, 320))  # Resize the image to a max of 320x320
+                    max_width, max_height = 1440, 1440
+                    img.thumbnail((max_width, max_height))
                     img.save(thumbnail_path)
             elif mime_type.startswith('video'):
                 # Process video
