@@ -37,7 +37,16 @@ def process_image(original_path, thumbnail_path):
         with Image.open(original_path) as img:
             max_width, max_height = 1440, 1440
             img.thumbnail((max_width, max_height))
-            img.save(thumbnail_path)
+            # img.save(thumbnail_path)  # the default is ~ 75%, optimization False
+            img.save(thumbnail_path.rsplit('.', 1)[0] + '_optimize=True_quality=75.' + thumbnail_path.rsplit('.', 1)[1] if '.' in thumbnail_path else thumbnail_path,
+                     optimize=True,
+                     quality=75)
+            # img.save(thumbnail_path.rsplit('.', 1)[0] + '_optimize=True_quality=95.' + thumbnail_path.rsplit('.', 1)[1] if '.' in thumbnail_path else thumbnail_path,
+            #          optimize=True,
+            #          quality=95)
+            # img.save(thumbnail_path.rsplit('.', 1)[0] + 'quality=75.' + thumbnail_path.rsplit('.', 1)[1] if '.' in thumbnail_path else thumbnail_path,
+            #          quality=75)
+
     except Exception as e:
         print(f"Failed to process image {original_path}: {e}")
 
