@@ -2,8 +2,8 @@ import os
 import json
 import mimetypes
 import logging
+import ffmpeg
 from PIL import Image
-import moviepy.editor as mpy
 
 
 # Set up logging
@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def get_media_files_metadata(root_dir):
     """Gather metadata for all media files in the given directory."""
     metadata = {}
-    for root, _, files in os.walk(root_dir):
+    for root, dir, files in os.walk(root_dir):
         for file in files:
             file_path = os.path.join(root, file)
             mime_type, _ = mimetypes.guess_type(file_path)
@@ -51,14 +51,23 @@ def process_image(original_path, thumbnail_path):
 
 
 def process_video(original_path, thumbnail_path):
-    """Resize and save the video."""
+    """Compress video using ffmpeg-python."""
     try:
-        with mpy.VideoFileClip(original_path) as clip:
-            clip_resized = clip.resize(width=320)
-            clip_resized.write_videofile(thumbnail_path, codec='libx264', audio_codec='aac')
-        logging.info(f"Processed video: {original_path}")
-    except Exception as e:
-        logging.error(f"Failed to process video {original_path}: {e}")
+        (
+            ffmpeg
+            .input(original_path)
+            .output(thumbnail_path,
+                    vcodec='libx264',   # Video codec
+                    crf=28,             # Constant Rate Factor for quality control (0 to 51 default 23). E.G. 28 ~ 16.4Mb, 32 ~ 11.6 (-30%) but AFFECTING QUALITY
+                    preset='medium',    # Compression speed (try also slow, slower, veryslow) - no change in size, but small increase in quality - extra long processing
+                    acodec='aac',       # Audio codec
+                    b='128k',           # Audio bitrate (change mostly not affecting)
+                    vf='scale=640:-1')  # Resize video width to 320 and maintain aspect ratio
+            .run()
+        )
+        logging.info(f"Compressed video: {original_path} to {thumbnail_path}")
+    except ffmpeg.Error as e:
+        logging.error(f"Failed to compress video {original_path}: {e.stderr.decode()}")
 
 
 def process_media(file_info, relative_path, shadow_root):
