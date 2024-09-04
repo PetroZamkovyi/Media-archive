@@ -7,7 +7,7 @@ from moviepy.editor import VideoFileClip
 
 # Function to get media files and their metadata
 def get_media_files_metadata(root_dir):
-    metadata = []
+    metadata = {}
     for root, dirs, files in os.walk(root_dir):
 
         for file in files:
@@ -15,6 +15,14 @@ def get_media_files_metadata(root_dir):
             mime_type, _ = mimetypes.guess_type(file_path)
 
             if mime_type and (mime_type.startswith('image') or mime_type.startswith('video')):
+                # Calculate the relative path
+                relative_path = os.path.relpath(file_path, root_dir)
+
+                # Skip files in 'Media-archive' folder
+                if relative_path.startswith('Media-archive'):
+                    print(f"Skipping file in shadow folder: {relative_path}")
+                    continue
+
                 file_info = {
                     'original_path': file_path,
                     'filename': file,
@@ -23,7 +31,7 @@ def get_media_files_metadata(root_dir):
                     'created': os.path.getctime(file_path),
                     'size': os.path.getsize(file_path)
                 }
-                metadata.append(file_info)
+                metadata[relative_path] = file_info
 
     return metadata
 
@@ -53,12 +61,12 @@ def process_video(original_path, thumbnail_path):
 
 
 # Function to process media files (calls process_image or process_video)
-def process_media(file_info, root_dir, shadow_root):
+def process_media(file_info, relative_path, shadow_root):
     original_path = file_info['original_path']
     mime_type = file_info['filetype']
 
     # Compute the shadow path for the file and create directories if necessary
-    shadow_path = original_path.replace(root_dir, shadow_root, 1)
+    shadow_path = os.path.join(shadow_root, relative_path)
     shadow_dir = os.path.dirname(shadow_path)
     os.makedirs(shadow_dir, exist_ok=True)
 
@@ -89,12 +97,12 @@ def main():
     metadata_file_path = os.path.join(shadow_root, 'metadata.json')
 
     # Step 2: Save metadata to JSON
-    with open(metadata_file_path, 'w') as metadata_file:
-        json.dump(media_files, metadata_file, indent=4)
+    with open(metadata_file_path, 'w', encoding='utf-8') as metadata_file:
+        json.dump(media_files, metadata_file, indent=4, ensure_ascii=False)
 
     # Step 3: Process each media file
-    for file_info in media_files:
-        process_media(file_info, root_dir, shadow_root)
+    for relative_path, file_info in media_files.items():
+        process_media(file_info, relative_path, shadow_root)
 
     print(f"Processing completed. Check the '{shadow_root}' folder for results.")
 
